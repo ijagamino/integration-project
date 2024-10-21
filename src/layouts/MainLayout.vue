@@ -50,6 +50,7 @@ const drawerItems = [
   { route: "dashboard", label: "Dashboard", icon: "dashboard" },
   { route: "inventory", label: "Inventory", icon: "dashboard" },
   { route: "sales", label: "Sales", icon: "dashboard" },
+  { route: "pos", label: "pos", icon: "dashboard" },
 ];
 
 const leftDrawerOpen = ref(false);

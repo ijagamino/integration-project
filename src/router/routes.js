@@ -18,6 +18,11 @@ const routes = [
         name: "sales",
         component: () => import("pages/Sales.vue"),
       },
+      {
+        path: "pos",
+        name: "pos",
+        component: () => import("pages/Pos.vue"),
+      },
     ],
   },
 
