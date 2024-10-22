@@ -81,7 +81,6 @@ defineOptions({
 const products = ref([]);
 const selectedProducts = ref([]);
 
-// Fetch products from the API
 const fetchProducts = async () => {
   try {
     const response = await api.get("/products");
@@ -96,7 +95,6 @@ const fetchProducts = async () => {
   }
 };
 
-// Function to select a product
 const selectProduct = (product) => {
   const itemInList = selectedProducts.value.find(
     (item) => item._id === product._id
@@ -119,7 +117,6 @@ const selectProduct = (product) => {
   }
 };
 
-// Function to deselect a product
 const deselectProduct = (product) => {
   const index = selectedProducts.value.findIndex(
     (item) => item._id === product._id
@@ -129,19 +126,17 @@ const deselectProduct = (product) => {
   }
 };
 
-// Function to update quantity
 const updateQuantity = (product) => {
   const itemInList = selectedProducts.value.find(
     (item) => item._id === product._id
   );
 
   if (itemInList && itemInList.quantity > itemInList.stock) {
-    itemInList.quantity = itemInList.stock; // Reset quantity to stock level
+    itemInList.quantity = itemInList.stock;
     console.warn("Quantity reset to available stock.");
   }
 };
 
-// Product table columns configuration
 const productColumns = [
   { name: "name", label: "Product Name", align: "left", field: "name" },
   { name: "stock", label: "Stock", align: "center", field: "stock" },
@@ -149,14 +144,12 @@ const productColumns = [
   { name: "select", label: "Select", align: "center", field: "select" },
 ];
 
-// Selected product table columns configuration
 const selectedProductColumns = [
   { name: "name", label: "Product Name", align: "left", field: "name" },
   { name: "price", label: "Price", align: "right", field: "price" },
   { name: "quantity", label: "Quantity", align: "center", field: "quantity" },
 ];
 
-// Calculate the total amount for the selected products
 const totalAmount = computed(() =>
   selectedProducts.value.reduce(
     (total, item) => total + (item.price * item.quantity || 0),
@@ -164,7 +157,6 @@ const totalAmount = computed(() =>
   )
 );
 
-// Format currency as PHP
 const formatCurrency = (value) => {
   const numericValue = parseFloat(value);
   if (isNaN(numericValue)) {
@@ -176,7 +168,6 @@ const formatCurrency = (value) => {
   }).format(numericValue);
 };
 
-// Fetch products on component mount
 onMounted(fetchProducts);
 </script>
 
