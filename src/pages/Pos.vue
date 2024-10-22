@@ -1,54 +1,56 @@
 <template>
-  <div class="row">
-    <div class="col-6">
-      <h2>List of Products</h2>
-      <q-table
-        :rows="products"
-        :columns="productColumns"
-        row-key="_id"
-        @row-click="selectProduct"
-        class="cursor-pointer"
-      >
-        <template v-slot:body-cell-name="props">
-          <q-td :props="props">{{ props.row.name }}</q-td>
-        </template>
-        <template v-slot:body-cell-stock="props">
-          <q-td :props="props" :class="{ 'text-red': props.row.stock < 5 }">
-            {{ props.row.stock }}
-          </q-td>
-        </template>
-        <template v-slot:body-cell-price="props">
-          <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
-        </template>
-      </q-table>
-    </div>
+  <q-page class="q-pa-xl">
+    <div class="row q-col-gutter-xl">
+      <div class="col-12 col-lg-6">
+        <h2>List of Products</h2>
+        <q-table
+          :rows="products"
+          :columns="productColumns"
+          row-key="_id"
+          @row-click="selectProduct"
+          class="cursor-pointer"
+        >
+          <template v-slot:body-cell-name="props">
+            <q-td :props="props">{{ props.row.name }}</q-td>
+          </template>
+          <template v-slot:body-cell-stock="props">
+            <q-td :props="props" :class="{ 'text-red': props.row.stock < 5 }">
+              {{ props.row.stock }}
+            </q-td>
+          </template>
+          <template v-slot:body-cell-price="props">
+            <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
+          </template>
+        </q-table>
+      </div>
 
-    <div class="col-6">
-      <h2>Selected Products</h2>
-      <q-table
-        :rows="selectedProducts"
-        :columns="selectedProductColumns"
-        row-key="_id"
-        class="cursor-default"
-        @row-click="deselectProduct"
-      >
-        <template v-slot:body-cell-name="props">
-          <q-td :props="props">{{ props.row.name }}</q-td>
-        </template>
-        <template v-slot:body-cell-price="props">
-          <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
-        </template>
-        <template v-slot:body-cell-quantity="props">
-          <q-td :props="props">{{ props.row.quantity }}</q-td>
-        </template>
-      </q-table>
+      <div class="col-12 col-lg-6">
+        <h2>Selected Products</h2>
+        <q-table
+          :rows="selectedProducts"
+          :columns="selectedProductColumns"
+          row-key="_id"
+          class="cursor-default"
+          @row-click="deselectProduct"
+        >
+          <template v-slot:body-cell-name="props">
+            <q-td :props="props">{{ props.row.name }}</q-td>
+          </template>
+          <template v-slot:body-cell-price="props">
+            <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
+          </template>
+          <template v-slot:body-cell-quantity="props">
+            <q-td :props="props">{{ props.row.quantity }}</q-td>
+          </template>
+        </q-table>
 
-      <q-separator />
-      <div class="total">
-        <h3>Total: {{ formatCurrency(totalAmount) }}</h3>
+        <q-separator />
+        <div class="total">
+          <h3>Total: {{ formatCurrency(totalAmount) }}</h3>
+        </div>
       </div>
     </div>
-  </div>
+  </q-page>
 </template>
 
 <script setup>

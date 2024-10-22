@@ -23,6 +23,7 @@
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" elevated>
       <q-list bordered>
+        <q-item-label header>Quick Access Menu</q-item-label>
         <q-item
           v-for="drawerItem in drawerItems"
           :key="drawerItem.route"
@@ -34,23 +35,52 @@
             <q-icon color="primary" :name="drawerItem.icon" />
           </q-item-section>
 
-          <q-item-section>{{ drawerItem.label }}</q-item-section>
+          <q-item-section>
+            <q-item-label>{{ drawerItem.label }}</q-item-label>
+            <q-item-label v-if="drawerItem.caption" caption>{{
+              drawerItem.caption
+            }}</q-item-label>
+          </q-item-section>
         </q-item>
       </q-list>
     </q-drawer>
 
     <q-page-container>
       <router-view />
+      <q-page-sticky position="bottom-right" :offset="[20, 20]">
+        <q-btn
+          :to="{ name: 'pos' }"
+          round
+          color="primary"
+          icon="add"
+          size="xl"
+        />
+      </q-page-sticky>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup>
 const drawerItems = [
-  { route: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { route: "inventory", label: "Inventory", icon: "dashboard" },
-  { route: "sales", label: "Sales", icon: "dashboard" },
-  { route: "pos", label: "pos", icon: "dashboard" },
+  {
+    route: "dashboard",
+    label: "Dashboard",
+    caption: "Overview",
+    icon: "dashboard",
+  },
+  {
+    route: "inventory",
+    label: "Inventory",
+    caption: "Manage product stocks",
+    icon: "inventory",
+  },
+  { route: "sales", label: "Sales", caption: "Sales history", icon: "receipt" },
+  {
+    route: "pos",
+    label: "Point of Sale",
+    caption: "Add a sale",
+    icon: "point_of_sale",
+  },
 ];
 
 const leftDrawerOpen = ref(false);
