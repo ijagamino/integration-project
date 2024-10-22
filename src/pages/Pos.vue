@@ -7,8 +7,8 @@
           :rows="products"
           :columns="productColumns"
           row-key="_id"
-          @row-click="selectProduct"
           class="cursor-pointer"
+          @row-click="selectProduct"
         >
           <template v-slot:body-cell-name="props">
             <q-td :props="props">{{ props.row.name }}</q-td>
@@ -20,6 +20,16 @@
           </template>
           <template v-slot:body-cell-price="props">
             <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
+          </template>
+          <template v-slot:body-cell-select="props">
+            <q-td :props="props">
+              <q-btn
+                color="primary"
+                label="Select"
+                @click.stop="selectProduct(props.row)"
+                :disabled="props.row.stock <= 0"
+              />
+            </q-td>
           </template>
         </q-table>
       </div>
@@ -40,7 +50,14 @@
             <q-td :props="props">{{ formatCurrency(props.row.price) }}</q-td>
           </template>
           <template v-slot:body-cell-quantity="props">
-            <q-td :props="props">{{ props.row.quantity }}</q-td>
+            <q-td :props="props">
+              <q-input
+                v-model="props.row.quantity"
+                type="number"
+                min="1"
+                @change="updateQuantity(props.row)"
+              />
+            </q-td>
           </template>
         </q-table>
 
@@ -64,6 +81,7 @@ defineOptions({
 const products = ref([]);
 const selectedProducts = ref([]);
 
+// Fetch products from the API
 const fetchProducts = async () => {
   try {
     const response = await api.get("/products");
@@ -73,12 +91,12 @@ const fetchProducts = async () => {
       price: parseFloat(product.price) || 0,
       stock: parseInt(product.stock) || 0,
     }));
-    console.log("Products Data:", products.value);
   } catch (error) {
     console.error("Failed to fetch products:", error);
   }
 };
 
+// Function to select a product
 const selectProduct = (product) => {
   const itemInList = selectedProducts.value.find(
     (item) => item._id === product._id
@@ -93,24 +111,33 @@ const selectProduct = (product) => {
   } else {
     selectedProducts.value.push({
       _id: product._id,
-      name: product.name || "Unknown",
-      price: parseFloat(product.price) || 0,
-      stock: parseInt(product.stock) || 0,
+      name: product.name,
+      price: parseFloat(product.price),
+      stock: parseInt(product.stock),
       quantity: 1,
     });
   }
 };
 
+// Function to deselect a product
 const deselectProduct = (product) => {
   const index = selectedProducts.value.findIndex(
     (item) => item._id === product._id
   );
   if (index !== -1) {
-    if (selectedProducts.value[index].quantity > 1) {
-      selectedProducts.value[index].quantity -= 1;
-    } else {
-      selectedProducts.value.splice(index, 1);
-    }
+    selectedProducts.value.splice(index, 1);
+  }
+};
+
+// Function to update quantity
+const updateQuantity = (product) => {
+  const itemInList = selectedProducts.value.find(
+    (item) => item._id === product._id
+  );
+
+  if (itemInList && itemInList.quantity > itemInList.stock) {
+    itemInList.quantity = itemInList.stock; // Reset quantity to stock level
+    console.warn("Quantity reset to available stock.");
   }
 };
 
@@ -119,6 +146,7 @@ const productColumns = [
   { name: "name", label: "Product Name", align: "left", field: "name" },
   { name: "stock", label: "Stock", align: "center", field: "stock" },
   { name: "price", label: "Price", align: "right", field: "price" },
+  { name: "select", label: "Select", align: "center", field: "select" },
 ];
 
 // Selected product table columns configuration
