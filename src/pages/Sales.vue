@@ -1,13 +1,22 @@
 <template>
   <q-page class="q-pa-xl">
-    <q-table :rows="salesRows" :columns="salesColumns">
+    <q-table :rows="salesRows" :columns="salesColumns" :loading="loading">
       <template v-slot:body="props">
         <q-tr :props="props">
           <q-td key="id" :props="props">
             {{ props.row.id }}
           </q-td>
+          <q-td key="saleID" :props="props">
+            {{ props.row.saleID }}
+          </q-td>
           <q-td key="date" :props="props">
             <div class="text-pre-wrap">{{ props.row.date }}</div>
+          </q-td>
+          <q-td key="productName" :props="props">
+            {{ props.row.productName }}
+          </q-td>
+          <q-td key="quantity" :props="props">
+            {{ props.row.quantity }}
           </q-td>
           <q-td key="totalAmount" :props="props">
             {{ formatCurrency(props.row.totalAmount) }}
@@ -15,27 +24,60 @@
         </q-tr>
       </template>
     </q-table>
+    <q-banner v-if="error" color="negative" class="q-mt-md">
+      Failed to load sales data: {{ error }}
+    </q-banner>
   </q-page>
 </template>
 
 <script setup>
+
 defineOptions({
   name: "IndexPage",
 });
 
 const { formatCurrency } = useFormatCurrency();
+const salesRows = ref([]);
+const loading = ref(true);
+const error = ref(null);
 
-const salesRows = [
-  // kuya vincent pachange na lang po dito =)
-  // hardcoded kasi hard ang nagcode
-  { id: 1, date: "2024-10-17", totalAmount: 2000 },
-  { id: 2, date: "2024-10-18", totalAmount: 3000 },
-  { id: 3, date: "2024-10-20", totalAmount: 4000 },
-];
+const fetchSales = async () => {
+  loading.value = true;
+  try {
+    const response = await api.get("/salesdetails");
+    salesRows.value = response.data.map((sale) => ({
+      id: sale.id,
+      saleID: sale.salesID,
+      date: new Date(sale.date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }),
+      productName: sale.productName,
+      quantity: sale.quantity,
+      totalAmount: sale.totalAmount,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch sales:", err);
+    error.value = "Could not load sales data.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchSales);
 
 const salesColumns = [
   { name: "id", label: "ID", align: "left", field: "id" },
+  { name: "saleID", label: "Sale ID", align: "left", field: "saleID" },
   { name: "date", label: "Date", align: "center", field: "date" },
+  {
+    name: "productName",
+    label: "Product Name",
+    align: "left",
+    field: "productName",
+  },
+  { name: "quantity", label: "Quantity", align: "center", field: "quantity" },
   {
     name: "totalAmount",
     label: "Total Amount",

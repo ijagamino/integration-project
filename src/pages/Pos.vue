@@ -64,6 +64,12 @@
         <q-separator />
         <div class="total">
           <h3>Total: {{ formatCurrency(totalAmount) }}</h3>
+          <q-btn
+            color="primary"
+            label="Submit Sale"
+            @click="submitSale"
+            :disable="selectedProducts.length === 0"
+          />
         </div>
       </div>
     </div>
@@ -155,6 +161,40 @@ const totalAmount = computed(() =>
     0
   )
 );
+
+const submitSale = async () => {
+  try {
+    if (selectedProducts.value.length === 0) {
+      console.warn("No products selected");
+      return;
+    }
+
+    const currentDate = new Date();
+    const saleResponse = await api.post("/sales", {
+      totalAmount: totalAmount.value,
+      date: currentDate,
+    });
+
+    const saleId = saleResponse.data._id;
+
+    const salesDetails = selectedProducts.value.map((product) => ({
+      saleID: saleId,
+      productID: product._id,
+      quantity: product.quantity,
+      total: product.price * product.quantity,
+    }));
+
+    await Promise.all(
+      salesDetails.map((details) => api.post("/salesdetails", details))
+    );
+
+    console.log("Sale submitted successfully");
+
+    selectedProducts.value = [];
+  } catch (error) {
+    console.error("Failed to submit sale:", error);
+  }
+};
 
 onMounted(fetchProducts);
 </script>
