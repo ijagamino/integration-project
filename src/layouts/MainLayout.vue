@@ -29,6 +29,7 @@
           :key="drawerItem.route"
           :to="{ name: drawerItem.route }"
           clickable
+          exact
           v-ripple
         >
           <q-item-section avatar>

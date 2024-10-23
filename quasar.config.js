@@ -109,6 +109,7 @@ module.exports = configure(function (/* ctx */) {
                   ["default", "axios"], // import { default as axios } from 'axios',
                 ],
                 "boot/axios": ["api"],
+                useFormatCurrency: ["formatCurrency"],
               },
             ],
             dirs: [
