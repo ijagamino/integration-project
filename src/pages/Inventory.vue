@@ -9,56 +9,47 @@
       />
     </div>
 
-    <q-markup-table flat bordered>
-      <thead>
-        <tr>
-          <th class="text-left">Name</th>
-          <th class="text-center">Price</th>
-          <th class="text-center">Stock</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="product in products" :key="product._id">
-          <td class="text-left">{{ product.name }}</td>
-          <td class="text-center">
+    <q-table
+      title="List of Products"
+      :rows="products"
+      :columns="productColumns"
+      row-key="_id"
+      class="cursor-default"
+    >
+      <template v-slot:body="props">
+        <q-tr :props="props">
+          <q-td key="name" :props="props">
+            {{ props.row.name }}
+          </q-td>
+          <q-td key="price" :props="props">
+            {{ formatCurrency(props.row.price) }}
             <q-popup-edit
-              v-model="product.price"
-              title="Edit Price"
-              buttons
               v-slot="scope"
-              @save="updateProduct(product)"
+              v-model="props.row.price"
+              title="Update price"
+              buttons
+              @save="updateProduct(props.row)"
+              label-set="Save"
             >
-              <q-input
-                v-model.number="scope.value"
-                type="number"
-                dense
-                autofocus
-                @keyup.enter="scope.set"
-              />
+              <q-input v-model="scope.value" type="number" dense autofocus />
             </q-popup-edit>
-            {{ formatCurrency(product.price) }}
-          </td>
-          <td class="text-center">
+          </q-td>
+          <q-td key="stock" :props="props">
+            <div class="text-pre-wrap">{{ props.row.stock }}</div>
             <q-popup-edit
-              v-model="product.stock"
-              title="Edit Stock"
-              buttons
               v-slot="scope"
-              @save="updateProduct(product)"
+              v-model="props.row.stock"
+              title="Update stock"
+              buttons
+              @save="updateProduct(props.row)"
+              label-set="Save"
             >
-              <q-input
-                v-model.number="scope.value"
-                type="number"
-                dense
-                autofocus
-                @keyup.enter="scope.set"
-              />
+              <q-input v-model="scope.value" type="number" dense autofocus />
             </q-popup-edit>
-            {{ product.stock }}
-          </td>
-        </tr>
-      </tbody>
-    </q-markup-table>
+          </q-td>
+        </q-tr>
+      </template>
+    </q-table>
 
     <q-dialog v-model="showModal">
       <q-card>
@@ -106,15 +97,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import api from "src/services/api";
-
 defineOptions({
   name: "indexPage",
 });
 
 const products = ref([]);
 const showModal = ref(false);
+const showUpdateModal = ref(false);
 const newProduct = ref({ name: "", price: 0, stock: 0 });
 
 const fetchProducts = async () => {
@@ -153,7 +142,8 @@ const addProduct = async () => {
 
 const updateProduct = async (product) => {
   try {
-    await api.put(`/products/${product._id}`, {
+    const response = await api.put(`/products/${product._id}`, {
+      name: product.name,
       price: parseFloat(product.price),
       stock: parseInt(product.stock),
     });
@@ -163,16 +153,13 @@ const updateProduct = async (product) => {
   }
 };
 
-const formatCurrency = (value) => {
-  const numericValue = parseFloat(value);
-  if (isNaN(numericValue)) {
-    return "₱0.00";
-  }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "PHP",
-  }).format(numericValue);
-};
+const productColumns = [
+  { name: "name", label: "Product Name", align: "left", field: "name" },
+  { name: "price", label: "Price", align: "right", field: "price" },
+  { name: "stock", label: "Stock", align: "center", field: "stock" },
+];
+
+const { formatCurrency } = useFormatCurrency();
 
 onMounted(fetchProducts);
 </script>

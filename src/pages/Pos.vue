@@ -71,12 +71,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import api from "src/services/api";
-
 defineOptions({
   name: "IndexPage",
 });
+
+const { formatCurrency } = useFormatCurrency();
 
 const products = ref([]);
 const selectedProducts = ref([]);
@@ -156,17 +155,6 @@ const totalAmount = computed(() =>
     0
   )
 );
-
-const formatCurrency = (value) => {
-  const numericValue = parseFloat(value);
-  if (isNaN(numericValue)) {
-    return "₱0.00";
-  }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "PHP",
-  }).format(numericValue);
-};
 
 onMounted(fetchProducts);
 </script>
