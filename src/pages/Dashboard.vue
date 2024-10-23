@@ -6,7 +6,9 @@
           <q-card>
             <q-card-section>
               <div class="text-h6">Sales</div>
-              <div class="text-subtitle">Total sales: {{ totalSales }}</div>
+              <div class="text-subtitle">
+                Total sales: {{ formatCurrency(totalSales) }}
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -15,8 +17,13 @@
           <q-card>
             <q-card-section>
               <div class="text-h6">Sales by Category</div>
-              <!-- kuya vincent pa change na lang po dito =) -->
-              <div class="text-subtitle">{{ totalSales }}</div>
+              <div class="text-subtitle">
+                {{
+                  salesByCategory !== "Not Available"
+                    ? formatCurrency(salesByCategory)
+                    : salesByCategory
+                }}
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -25,8 +32,9 @@
           <q-card>
             <q-card-section>
               <div class="text-h6">Average Spent per Transaction</div>
-              <!-- kuya vincent pa change na lang po dito =) -->
-              <div class="text-subtitle">{{ totalSales }}</div>
+              <div class="text-subtitle">
+                {{ formatCurrency(averageSpentPerTransaction) }}
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -36,8 +44,8 @@
             <q-card-section>
               <div class="text-h6">Number of Transactions</div>
               <div class="text-subtitle">
-                <!-- kuya vincent pa change na lang po dito =) -->
-                Total sales during the past 7 days: {{ totalSales }}
+                Total sales during the past 7 days:
+                {{ formatCurrency(totalSales) }}
               </div>
               <apexchart
                 :options="transactionChartOptions"
@@ -47,77 +55,23 @@
           </q-card>
         </div>
       </div>
-
-      <div class="col-12 col-lg-6 row q-col-gutter-md">
-        <div class="col-12">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">products</div>
-              <div class="text-subtitle">
-                Total products: {{ totalProducts }}
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-6">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">Most Stock</div>
-              <div class="text-subtitle">
-                <!-- kuya vincent pachange na lang po dito =) -->
-                Product Name: x{{ totalProducts }}
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-6">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">Most stock</div>
-              <div class="text-subtitle">
-                <!-- kuya vincent pachange na lang po dito =) -->
-                Product Name: x{{ totalProducts }}
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col">
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">Total Value of Current Inventory</div>
-              <div class="text-subtitle">
-                <!-- kuya vincent pachange na lang po dito =) -->
-                {{ totalProducts }}
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
     </div>
   </q-page>
 </template>
 
 <script setup>
-import ApexCharts from "apexcharts";
+import { ref, onMounted } from "vue";
+import api from "src/services/api";
+import { useFormatCurrency } from "src/composables/useFormatCurrency";
 
 defineOptions({
   name: "DashboardPage",
 });
-const tab = ref("sales");
-const totalSales = ref(69);
-const totalProducts = ref(420);
-const selectedTab = ref("daily");
 
-const salesData = {
-  daily: 500,
-  weekly: 3500,
-  monthly: 15000,
-};
-
-// Transaction Chart
+const { formatCurrency } = useFormatCurrency();
+const totalSales = ref(0);
+const salesByCategory = ref("Not Available");
+const averageSpentPerTransaction = ref(0);
 const transactionChartOptions = ref({
   chart: {
     type: "line",
@@ -128,12 +82,40 @@ const transactionChartOptions = ref({
   },
 });
 
-const transactionChartSeries = [
+const transactionChartSeries = ref([
   {
-    name: "series-1",
-    // kuya vincent pachange na lang po dito =)
-    // hardcoded kasi hard ang nagcode
-    data: [30, 40, 45, 50, 49, 60, 70],
+    name: "Sales",
+    data: [],
   },
-];
+]);
+
+const fetchSalesData = async () => {
+  try {
+    const response = await api.get("/salesdetails");
+    const salesDetails = response.data;
+
+    if (salesDetails.length) {
+      totalSales.value = salesDetails.reduce(
+        (sum, sale) => sum + sale.totalAmount,
+        0
+      );
+
+      averageSpentPerTransaction.value = totalSales.value / salesDetails.length;
+
+      const salesPerDay = Array(7).fill(0);
+      salesDetails.forEach((sale) => {
+        const saleDay = new Date(sale.date).getDay();
+        salesPerDay[saleDay] += sale.totalAmount;
+      });
+
+      transactionChartSeries.value[0].data = salesPerDay;
+    }
+  } catch (error) {
+    console.error("Failed to fetch sales data:", error);
+  }
+};
+
+onMounted(() => {
+  fetchSalesData();
+});
 </script>
