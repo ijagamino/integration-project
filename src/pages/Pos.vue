@@ -7,8 +7,7 @@
           :rows="products"
           :columns="productColumns"
           row-key="_id"
-          class="cursor-pointer"
-          @row-click="selectProduct"
+          class="cursor-default"
         >
           <template v-slot:body-cell-name="props">
             <q-td :props="props">{{ props.row.name }}</q-td>
@@ -56,6 +55,15 @@
                 type="number"
                 min="1"
                 @change="updateQuantity(props.row)"
+              />
+            </q-td>
+          </template>
+          <template v-slot:body-cell-remove="props">
+            <q-td :props="props">
+              <q-btn
+                color="negative"
+                label="Remove"
+                @click.stop="deselectProduct(props.row)"
               />
             </q-td>
           </template>
@@ -153,6 +161,7 @@ const selectedProductColumns = [
   { name: "name", label: "Product Name", align: "left", field: "name" },
   { name: "price", label: "Price", align: "right", field: "price" },
   { name: "quantity", label: "Quantity", align: "center", field: "quantity" },
+  { name: "remove", label: "Remove", align: "center", field: "remove" },
 ];
 
 const totalAmount = computed(() =>
@@ -200,8 +209,8 @@ onMounted(fetchProducts);
 </script>
 
 <style scoped>
-.cursor-pointer {
-  cursor: pointer;
+.cursor-default {
+  cursor: default;
 }
 
 .text-red {

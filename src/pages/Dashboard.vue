@@ -45,13 +45,11 @@
         <div class="col">
           <q-card>
             <q-card-section>
-              <div class="text-h6">Top 3 products by stocks</div>
-              <div class="text-subtitle">
-                <apexchart
-                  :options="topThreeProductsByStockChartOptions"
-                  :series="topThreeProductsByStockChartSeries"
-                />
-              </div>
+              <div class="text-h6">Top 3 Products by Stocks</div>
+              <apexchart
+                :options="topThreeProductsByStockChartOptions"
+                :series="topThreeProductsByStockChartSeries"
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -61,10 +59,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import api from "src/services/api";
-import { useFormatCurrency } from "src/composables/useFormatCurrency";
-
 defineOptions({
   name: "DashboardPage",
 });
@@ -74,27 +68,81 @@ const totalSales = ref(0);
 const products = ref([]);
 const averageSpentPerTransaction = ref(0);
 
+const today = new Date();
+const sevenDaysAgo = new Date(today);
+sevenDaysAgo.setDate(today.getDate() - 6);
+
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formattedToday = formatDate(today);
+const formattedSevenDaysAgo = formatDate(sevenDaysAgo);
+
+const getDateRange = (startDate, endDate) => {
+  const dates = [];
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    dates.push(formatDate(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return dates;
+};
+
+const dateRange = getDateRange(sevenDaysAgo, today);
+
+const transactionChartOptions = ref({
+  chart: {
+    type: "line",
+    id: "transaction",
+  },
+  xaxis: {
+    categories: dateRange,
+  },
+});
+
+const transactionChartSeries = ref([
+  {
+    name: "Sales",
+    data: Array(7).fill(0),
+  },
+]);
+
 const fetchSalesData = async () => {
   try {
     const response = await api.get("/salesdetails");
     const salesDetails = response.data;
 
     if (salesDetails.length) {
-      totalSales.value = salesDetails.reduce(
+      const filteredSales = salesDetails.filter((sale) => {
+        const saleDate = formatDate(new Date(sale.date));
+        return saleDate >= formattedSevenDaysAgo && saleDate <= formattedToday;
+      });
+
+      totalSales.value = filteredSales.reduce(
         (sum, sale) => sum + sale.totalAmount,
         0
       );
 
-      averageSpentPerTransaction.value = totalSales.value / salesDetails.length;
+      averageSpentPerTransaction.value =
+        filteredSales.length > 0 ? totalSales.value / filteredSales.length : 0;
 
-      const salesPerDay = Array(7).fill(0);
+      const salesByDate = new Map(dateRange.map((date) => [date, 0]));
 
-      salesDetails.forEach((sale) => {
-        const saleDay = new Date(sale.date).getDay();
-        salesPerDay[saleDay] += sale.totalAmount;
+      filteredSales.forEach((sale) => {
+        const saleDate = formatDate(new Date(sale.date));
+        if (salesByDate.has(saleDate)) {
+          salesByDate.set(
+            saleDate,
+            salesByDate.get(saleDate) + sale.totalAmount
+          );
+        }
       });
 
-      transactionChartSeries.value[0].data = salesPerDay;
+      transactionChartSeries.value[0].data = Array.from(salesByDate.values());
     }
   } catch (error) {
     console.error("Failed to fetch sales data:", error);
@@ -115,9 +163,7 @@ const fetchProducts = async () => {
 };
 
 const topThreeProductsByStock = computed(() => {
-  return [...products.value]
-    .sort((a, b) => b.stock - a.stock) // Sort by stock in descending order
-    .slice(0, 3); // Return the top 3
+  return [...products.value].sort((a, b) => b.stock - a.stock).slice(0, 3);
 });
 
 const topThreeProductsByStockChartOptions = computed(() => ({
@@ -134,60 +180,6 @@ const topThreeProductsByStockChartSeries = computed(() => [
   {
     name: "Top Three Products By Stocks",
     data: topThreeProductsByStock.value.map((product) => product.stock),
-  },
-]);
-
-const today = new Date();
-
-// Get the date 7 days ago
-const oneWeekAgo = new Date();
-oneWeekAgo.setDate(today.getDate() - 6);
-
-// Array of day names
-const dayNames = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
-// Function to get the names of the days from one week ago to today
-const getDaysNames = (startDate, endDate) => {
-  const days = [];
-  let currentDate = new Date(startDate);
-
-  while (currentDate <= endDate) {
-    // Get the day name for the current date
-    days.push(dayNames[currentDate.getDay()]);
-    // Move to the next day
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return days;
-};
-
-// Get the names of the days from 7 days ago to today
-const daysNames = getDaysNames(oneWeekAgo, today);
-
-console.log("Days from 7 days ago to today:", daysNames);
-
-const transactionChartOptions = ref({
-  chart: {
-    type: "line",
-    id: "transaction",
-  },
-  xaxis: {
-    categories: daysNames,
-  },
-});
-
-const transactionChartSeries = ref([
-  {
-    name: "Sales",
-    data: [],
   },
 ]);
 
