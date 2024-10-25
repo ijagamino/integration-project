@@ -43,6 +43,20 @@
             }}</q-item-label>
           </q-item-section>
         </q-item>
+
+        <q-separator />
+
+        <q-item-label header>Miscellaneous</q-item-label>
+        <q-item :to="{ name: 'export' }" clickable exact v-ripple>
+          <q-item-section avatar>
+            <q-icon color="primary" name="import_export" />
+          </q-item-section>
+
+          <q-item-section>
+            <q-item-label>Export</q-item-label>
+            <q-item-label caption>Export data from database</q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
