@@ -92,6 +92,17 @@ app.put("/api/products/:id", async (req, res) => {
   }
 });
 
+app.get("/api/sales", async (req, res) => {
+  try {
+    const sales = await Sales.find({}, "totalAmount date");
+    console.log("Fetched sales:", sales);
+    res.json(sales);
+  } catch (error) {
+    console.error("Failed to fetch sales: ", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.post("/api/sales", async (req, res) => {
   try {
     const { totalAmount } = req.body;
@@ -100,6 +111,34 @@ app.post("/api/sales", async (req, res) => {
     res.json(newSale);
   } catch (error) {
     console.error("Failed to create sale:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/salesdetails", async (req, res) => {
+  try {
+    const salesDetails = await SalesDetails.find({})
+      .populate("productID", "name price")
+      .populate("saleID", "date totalAmount");
+
+    if (!salesDetails.length) {
+      return res.status(404).json({ message: "No sales details found." });
+    }
+
+    const formattedSalesDetails = salesDetails.map((detail) => ({
+      id: detail._id,
+      salesID: detail.saleID._id,
+      productID: detail.productID._id,
+      productName: detail.productID.name,
+      quantity: detail.quantity,
+      total: detail.total,
+      date: detail.saleID.date.toLocaleDateString("en-US"),
+      totalAmount: detail.saleID.totalAmount,
+    }));
+
+    res.json(formattedSalesDetails);
+  } catch (error) {
+    console.error("Failed to fetch sales details:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -122,33 +161,6 @@ app.post("/api/salesdetails", async (req, res) => {
     res.json(newSalesDetail);
   } catch (error) {
     console.error("Failed to add sales details:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-app.get("/api/salesdetails", async (req, res) => {
-  try {
-    const salesDetails = await SalesDetails.find({})
-      .populate("productID", "name price")
-      .populate("saleID", "date totalAmount");
-
-    if (!salesDetails.length) {
-      return res.status(404).json({ message: "No sales details found." });
-    }
-
-    const formattedSalesDetails = salesDetails.map((detail) => ({
-      id: detail._id,
-      salesID: detail.saleID._id,
-      productName: detail.productID.name,
-      quantity: detail.quantity,
-      total: detail.total,
-      date: detail.saleID.date.toLocaleDateString("en-US"),
-      totalAmount: detail.saleID.totalAmount,
-    }));
-
-    res.json(formattedSalesDetails);
-  } catch (error) {
-    console.error("Failed to fetch sales details:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

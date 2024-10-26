@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-xl">
-    <div class="row q-col-gutter-xl">
+    <div class="row q-col-gutter-xl items-start">
       <div class="col-12 col-lg-6 row q-col-gutter-md">
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-xl-6">
           <q-card>
             <q-card-section>
               <div class="text-h6">Sales</div>
@@ -13,7 +13,7 @@
           </q-card>
         </div>
 
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-xl-6">
           <q-card>
             <q-card-section>
               <div class="text-h6">Average Spent per Transaction</div>
@@ -24,7 +24,7 @@
           </q-card>
         </div>
 
-        <div class="col">
+        <div class="col-12">
           <q-card>
             <q-card-section>
               <div class="text-h6">Number of Transactions</div>
@@ -42,13 +42,29 @@
       </div>
 
       <div class="col-12 col-lg-6 row q-col-gutter-md">
-        <div class="col">
+        <div class="col-12">
           <q-card>
             <q-card-section>
-              <div class="text-h6">Top 3 Products by Stocks</div>
+              <div class="text-h6">Products Below Threshold</div>
+              <q-slider
+                v-model="threshold"
+                :min="0"
+                :max="50"
+                :markers="10"
+                :marker-labels="(val) => `${val}`"
+                label-always
+              />
+              <q-table :rows="productsBelowThreshold" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12">
+          <q-card>
+            <q-card-section>
+              <div class="text-h6">Top Selling Products</div>
               <apexchart
-                :options="topThreeProductsByStockChartOptions"
-                :series="topThreeProductsByStockChartSeries"
+                :options="topSellingProductsChartOptions"
+                :series="topSellingProductsChartSeries"
               />
             </q-card-section>
           </q-card>
@@ -65,8 +81,10 @@ defineOptions({
 
 const { formatCurrency } = useFormatCurrency();
 const totalSales = ref(0);
+const sales = ref(0);
 const products = ref([]);
-const averageSpentPerTransaction = ref(0);
+const salesDetails = ref();
+const threshold = ref(25);
 
 const today = new Date();
 const sevenDaysAgo = new Date(today);
@@ -114,10 +132,10 @@ const transactionChartSeries = ref([
 const fetchSalesData = async () => {
   try {
     const response = await api.get("/salesdetails");
-    const salesDetails = response.data;
+    salesDetails.value = response.data;
 
-    if (salesDetails.length) {
-      const filteredSales = salesDetails.filter((sale) => {
+    if (salesDetails.value.length) {
+      const filteredSales = salesDetails.value.filter((sale) => {
         const saleDate = formatDate(new Date(sale.date));
         return saleDate >= formattedSevenDaysAgo && saleDate <= formattedToday;
       });
@@ -126,9 +144,6 @@ const fetchSalesData = async () => {
         (sum, sale) => sum + sale.totalAmount,
         0
       );
-
-      averageSpentPerTransaction.value =
-        filteredSales.length > 0 ? totalSales.value / filteredSales.length : 0;
 
       const salesByDate = new Map(dateRange.map((date) => [date, 0]));
 
@@ -162,29 +177,71 @@ const fetchProducts = async () => {
   }
 };
 
-const topThreeProductsByStock = computed(() => {
-  return [...products.value].sort((a, b) => b.stock - a.stock).slice(0, 3);
+const fetchSales = async () => {
+  try {
+    const response = await api.get("/sales");
+    sales.value = response.data.map((sales) => ({
+      ...sales,
+      totalAmount: parseFloat(sales.totalAmount),
+      date: sales.date,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch sales: ", error);
+  }
+};
+
+const topSellingProducts = computed(() => {
+  const aggregatedQuantities = salesDetails.value?.reduce((acc, sale) => {
+    if (!acc[sale.productID]) {
+      acc[sale.productID] = {
+        productName: sale.productName,
+        quantity: 0,
+      };
+    }
+    acc[sale.productID].quantity += sale.quantity;
+    return acc;
+  }, {});
+  console.log(topSellingProducts.value);
+  return Object.values(aggregatedQuantities || {}).sort(
+    (a, b) => b.quantity - a.quantity
+  );
 });
 
-const topThreeProductsByStockChartOptions = computed(() => ({
+const topSellingProductsChartOptions = computed(() => ({
   chart: {
     type: "bar",
-    id: "topThreeProductsByStock",
+    id: "topSellingProducts",
   },
   xaxis: {
-    categories: topThreeProductsByStock.value.map((product) => product.name),
+    categories: topSellingProducts.value.map((product) => product.productName),
   },
 }));
 
-const topThreeProductsByStockChartSeries = computed(() => [
+const topSellingProductsChartSeries = computed(() => [
   {
-    name: "Top Three Products By Stocks",
-    data: topThreeProductsByStock.value.map((product) => product.stock),
+    name: "Quantity",
+    data: topSellingProducts.value.map((product) => product.quantity),
   },
 ]);
+
+const productsBelowThreshold = computed(() => {
+  return products.value
+    .filter((product) => product.stock < threshold.value)
+    .sort((a, b) => a.stock - b.stock)
+    .map((product) => ({
+      id: product._id,
+      name: product.name,
+      stock: product.stock,
+    }));
+});
+
+const averageSpentPerTransaction = computed(() =>
+  sales.value.length > 0 ? totalSales.value / sales.value.length : 0
+);
 
 onMounted(() => {
   fetchSalesData();
   fetchProducts();
+  fetchSales();
 });
 </script>
