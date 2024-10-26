@@ -24,7 +24,6 @@
     </div>
     <!-- Export all sales details data to CSV -->
     <div class="q-mt-sm">
-      <!-- Adjusted the icon alignment -->
       <q-btn
         color="primary"
         icon="point_of_sales"
