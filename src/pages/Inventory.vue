@@ -107,6 +107,7 @@ defineOptions({
 const showModal = ref(false);
 const showUpdateModal = ref(false);
 const newProduct = ref({ name: "", price: 0, stock: 0 });
+const errors = ref("");
 
 const $q = useQuasar();
 const queryClient = useQueryClient();
@@ -173,10 +174,16 @@ const {
   mutate: mutateUpdate,
 } = useMutation({
   mutationFn: async (product) => {
-    await api.put(`products/${product._id}`, product);
+    await api.put(`/products?id=${product._id}`, product);
   },
   onError: (err) => {
+    queryClient.invalidateQueries({ queryKey: ["products"] });
     errors.value = err.response.data.errors;
+
+    $q.notify({
+      message: `Error: ${errors.value}.`,
+      color: "positive",
+    });
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -187,9 +194,7 @@ const {
   },
 });
 
-const updateProduct = (product) => {
+const updateProduct = async (product) => {
   mutateUpdate(product);
 };
-
-// onMounted(fetchProducts);
 </script>

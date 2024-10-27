@@ -46,7 +46,7 @@ const fetchSales = async () => {
     const response = await api.get("/salesdetails");
     salesRows.value = response.data.map((sale) => ({
       id: sale.id,
-      saleID: sale.salesID,
+      saleID: sale.saleID,
       date: new Date(sale.date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "2-digit",

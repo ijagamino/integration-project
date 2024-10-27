@@ -4,6 +4,7 @@ const cors = require("cors");
 
 const app = express();
 const PORT = 5000;
+const uri = "mongodb://127.0.0.1:27017/clinic";
 
 app.use(cors());
 app.use(express.json());
@@ -17,7 +18,7 @@ const productSchema = new mongoose.Schema({
 const Product = mongoose.model("Product", productSchema);
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/clinic", {
+  .connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
